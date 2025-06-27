@@ -6,23 +6,47 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const Index = () => {
   const navigate = useNavigate();
   const [topic, setTopic] = useState("");
   const [turnDuration, setTurnDuration] = useState([3]);
   const [numberOfTurns, setNumberOfTurns] = useState([4]);
-  const [debaters, setDebaters] = useState("4");
+  const [selectedPersonas, setSelectedPersonas] = useState<string[]>([]);
+
+  // Famous AI personas to choose from
+  const aiPersonas = [
+    { id: "socrates", name: "Socrates", description: "Ancient Greek philosopher", avatar: "gpt", color: "blue" },
+    { id: "einstein", name: "Einstein", description: "Theoretical physicist", avatar: "ai2", color: "purple" },
+    { id: "trump", name: "Trump", description: "Former US President", avatar: "ai3", color: "green" },
+    { id: "shakespeare", name: "Shakespeare", description: "English playwright", avatar: "gpt", color: "blue" },
+    { id: "tesla", name: "Tesla", description: "Inventor and engineer", avatar: "ai2", color: "purple" },
+    { id: "churchill", name: "Churchill", description: "British Prime Minister", avatar: "ai3", color: "green" },
+    { id: "gandhi", name: "Gandhi", description: "Indian independence leader", avatar: "gpt", color: "blue" },
+    { id: "jobs", name: "Steve Jobs", description: "Apple co-founder", avatar: "ai2", color: "purple" }
+  ];
+
+  const handlePersonaToggle = (personaId: string) => {
+    setSelectedPersonas(prev => 
+      prev.includes(personaId) 
+        ? prev.filter(id => id !== personaId)
+        : [...prev, personaId]
+    );
+  };
 
   const handleJoinDebate = async () => {
-    if (topic.trim()) {
+    if (topic.trim() && selectedPersonas.length > 0) {
       // TODO: Replace with actual API call to create debate session
+      const selectedPersonaData = selectedPersonas.map(id => 
+        aiPersonas.find(persona => persona.id === id)
+      ).filter(Boolean);
+
       console.log('Creating debate with settings:', {
         topic,
         turnDuration: turnDuration[0],
         numberOfTurns: numberOfTurns[0],
-        debaters: parseInt(debaters)
+        selectedPersonas: selectedPersonaData
       });
       
       // For now, just navigate to debate room with state
@@ -31,7 +55,7 @@ const Index = () => {
           topic,
           turnDuration: turnDuration[0],
           numberOfTurns: numberOfTurns[0],
-          debaters: parseInt(debaters)
+          selectedPersonas: selectedPersonaData
         }
       });
     }
@@ -39,7 +63,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
+      <div className="w-full max-w-2xl space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold text-white">AI Debate Arena</h1>
@@ -64,6 +88,36 @@ const Index = () => {
                 onChange={(e) => setTopic(e.target.value)}
                 className="bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 h-12 text-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+            </div>
+
+            {/* AI Personas Selection */}
+            <div className="space-y-4">
+              <Label className="text-white text-lg font-medium">
+                Select AI Personas ({selectedPersonas.length} selected)
+              </Label>
+              <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto">
+                {aiPersonas.map((persona) => (
+                  <div
+                    key={persona.id}
+                    className={`flex items-center space-x-3 p-3 rounded-lg border transition-all cursor-pointer ${
+                      selectedPersonas.includes(persona.id)
+                        ? 'bg-blue-600/20 border-blue-500'
+                        : 'bg-gray-700/30 border-gray-600 hover:bg-gray-700/50'
+                    }`}
+                    onClick={() => handlePersonaToggle(persona.id)}
+                  >
+                    <Checkbox
+                      checked={selectedPersonas.includes(persona.id)}
+                      onChange={() => handlePersonaToggle(persona.id)}
+                      className="border-gray-400"
+                    />
+                    <div className="flex-1">
+                      <div className="text-white font-medium">{persona.name}</div>
+                      <div className="text-gray-400 text-sm">{persona.description}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Settings Section */}
@@ -109,31 +163,20 @@ const Index = () => {
                   <span>10 turns</span>
                 </div>
               </div>
-
-              {/* Number of Debaters */}
-              <div className="space-y-3">
-                <Label className="text-white font-medium">AI Debaters</Label>
-                <Select value={debaters} onValueChange={setDebaters}>
-                  <SelectTrigger className="bg-gray-700/50 border-gray-600 text-white h-12">
-                    <SelectValue placeholder="Select number of AI debaters" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-600">
-                    <SelectItem value="2" className="text-white hover:bg-gray-700">2 AI Debaters</SelectItem>
-                    <SelectItem value="3" className="text-white hover:bg-gray-700">3 AI Debaters</SelectItem>
-                    <SelectItem value="4" className="text-white hover:bg-gray-700">4 AI Debaters</SelectItem>
-                    <SelectItem value="5" className="text-white hover:bg-gray-700">5 AI Debaters</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             {/* Join Button */}
             <Button 
               onClick={handleJoinDebate}
-              disabled={!topic.trim()}
+              disabled={!topic.trim() || selectedPersonas.length === 0}
               className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               Join Debate
+              {selectedPersonas.length > 0 && (
+                <span className="ml-2 text-sm">
+                  with {selectedPersonas.length} AI{selectedPersonas.length > 1 ? 's' : ''}
+                </span>
+              )}
             </Button>
           </CardContent>
         </Card>
@@ -141,7 +184,7 @@ const Index = () => {
         {/* Footer */}
         <div className="text-center">
           <p className="text-gray-400 text-sm">
-            Create engaging debates with AI participants
+            Create engaging debates with AI personalities
           </p>
         </div>
       </div>

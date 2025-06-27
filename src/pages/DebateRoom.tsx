@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Send, Users, Timer } from "lucide-react";
 import { AIAvatar } from "@/components/AIAvatar";
 import { MessageBubble } from "@/components/MessageBubble";
-import { DebateTimer } from "@/components/DebateTimer";
 import { useToast } from "@/hooks/use-toast";
 
 interface Message {
@@ -27,17 +25,16 @@ const DebateRoom = () => {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentInput, setCurrentInput] = useState("");
-  const [currentSpeaker, setCurrentSpeaker] = useState("GPT-4");
-  const [timeLeft, setTimeLeft] = useState(180); // 3 minutes in seconds
+  const [currentSpeaker, setCurrentSpeaker] = useState("GPT-3");
+  const [timeLeft, setTimeLeft] = useState(161); // 02:41 as shown in image
   const [currentTurn, setCurrentTurn] = useState(1);
   const [isConnected, setIsConnected] = useState(false);
+  const [nextArgumentTime, setNextArgumentTime] = useState(44); // 0:44 as shown
 
-  // AI participants configuration
-  const aiParticipants = [
-    { name: "GPT-4", avatar: "gpt", color: "blue" },
-    { name: "Claude", avatar: "ai2", color: "purple" },
-    { name: "Gemini", avatar: "ai3", color: "green" },
-    { name: "You", avatar: "user", color: "cyan" }
+  // AI participants from the config
+  const selectedParticipants = debateConfig?.selectedPersonas || [
+    { name: "GPT-3", avatar: "gpt", color: "blue" },
+    { name: "AI-2", avatar: "ai2", color: "purple" }
   ];
 
   useEffect(() => {
@@ -46,19 +43,43 @@ const DebateRoom = () => {
       return;
     }
 
-    // TODO: Initialize WebSocket connection to backend
     initializeDebateSession();
     
-    // Initialize with welcome message
-    const welcomeMessage: Message = {
-      id: "welcome",
-      sender: "System",
-      content: `Welcome to the debate on "${debateConfig.topic}". The debate will begin shortly.`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isAI: true,
-      avatar: "system"
-    };
-    setMessages([welcomeMessage]);
+    // Sample messages to match the image
+    const sampleMessages: Message[] = [
+      {
+        id: "1",
+        sender: "GPT-3",
+        content: "Artificial intelligence has the potential to greatly benefit society by automating tasks and improving efficiency.",
+        timestamp: "12:21",
+        isAI: true,
+        avatar: "gpt"
+      },
+      {
+        id: "2",
+        sender: "alex_j",
+        content: "However, it also raises concerns about job displacement and privacy issues.",
+        timestamp: "12:19",
+        isAI: false
+      },
+      {
+        id: "3",
+        sender: "AI-2",
+        content: "While that is true, AI can also create new job opportunities and drive innovation.",
+        timestamp: "12:19",
+        isAI: true,
+        avatar: "ai2"
+      },
+      {
+        id: "4",
+        sender: "AI-13",
+        content: "",
+        timestamp: "12:18",
+        isAI: true,
+        avatar: "ai3"
+      }
+    ];
+    setMessages(sampleMessages);
   }, [debateConfig, navigate]);
 
   const initializeDebateSession = async () => {
@@ -91,7 +112,7 @@ const DebateRoom = () => {
 
     const newMessage: Message = {
       id: Date.now().toString(),
-      sender: "You",
+      sender: "alex_j",
       content: currentInput,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isAI: false
@@ -116,186 +137,146 @@ const DebateRoom = () => {
     }
   };
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   if (!debateConfig) {
     return null;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-      {/* Mobile-First Layout */}
-      <div className="flex flex-col h-screen">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 bg-gray-800/50 backdrop-blur-sm border-b border-gray-700">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/")}
-            className="text-white hover:bg-gray-700/50 p-2"
-            size="sm"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Back</span>
-          </Button>
-          
-          <div className="flex-1 text-center px-4">
-            <h1 className="text-lg sm:text-xl font-bold text-blue-300 truncate">
-              {debateConfig.topic}
-            </h1>
-            <div className="flex items-center justify-center mt-1 text-sm text-gray-400">
-              <Users className="w-3 h-3 mr-1" />
-              <span>{debateConfig.debaters} debaters</span>
-              <span className="mx-2">•</span>
-              <Timer className="w-3 h-3 mr-1" />
-              <span>{debateConfig.turnDuration}min turns</span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-black text-white">
+      {/* Header with topic */}
+      <div className="text-center py-8">
+        <h1 className="text-4xl font-bold text-blue-400 mb-2">
+          {debateConfig.topic || "The Impact of Artificial Intelligence on Society"}
+        </h1>
+      </div>
 
-          <div className="flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="text-xs text-gray-400 hidden sm:inline">
-              {isConnected ? 'Connected' : 'Disconnected'}
-            </span>
-          </div>
-        </div>
-
-        {/* Main Content - Desktop Layout */}
-        <div className="flex-1 hidden lg:flex">
-          {/* Left Sidebar - Participants */}
-          <div className="w-64 p-4 space-y-4 bg-gray-800/30">
-            <Card className="bg-gray-800/50 backdrop-blur-sm border-gray-700">
-              <CardContent className="p-4">
-                <h3 className="text-white font-semibold mb-4 flex items-center">
-                  <Users className="w-4 h-4 mr-2" />
-                  Participants
-                </h3>
-                <div className="space-y-3">
-                  {aiParticipants.slice(0, debateConfig.debaters).map((participant) => (
-                    <AIAvatar
-                      key={participant.name}
-                      name={participant.name}
-                      avatar={participant.avatar}
-                      color={participant.color}
-                      isActive={currentSpeaker === participant.name}
-                    />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Center - Chat Area */}
-          <div className="flex-1 flex flex-col p-4">
-            <Card className="flex-1 bg-gray-800/50 backdrop-blur-sm border-gray-700 flex flex-col">
-              <CardContent className="flex-1 flex flex-col p-4">
-                <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
-                  {messages.map((message) => (
-                    <MessageBubble key={message.id} message={message} />
-                  ))}
-                </div>
-                
-                <div className="flex space-x-2">
-                  <Input
-                    value={currentInput}
-                    onChange={(e) => setCurrentInput(e.target.value)}
-                    placeholder="Enter your argument..."
-                    className="bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 flex-1"
-                    onKeyPress={handleKeyPress}
-                    disabled={!isConnected}
-                  />
-                  <Button 
-                    onClick={handleSendMessage}
-                    className="bg-blue-600 hover:bg-blue-700"
-                    disabled={!currentInput.trim() || !isConnected}
-                  >
-                    <Send className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Sidebar - Timer & Stats */}
-          <div className="w-64 p-4 space-y-4">
-            <DebateTimer 
-              timeLeft={timeLeft}
-              currentSpeaker={currentSpeaker}
-              totalTurns={debateConfig.numberOfTurns}
-              currentTurn={currentTurn}
-            />
-            
-            <Card className="bg-gray-800/50 backdrop-blur-sm border-gray-700">
-              <CardContent className="p-4">
-                <h3 className="text-white font-semibold mb-4">Live Poll</h3>
-                <div className="space-y-3">
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">For</span>
-                      <span className="text-blue-400">65%</span>
-                    </div>
-                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 w-[65%] transition-all duration-500"></div>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">Against</span>
-                      <span className="text-purple-400">35%</span>
-                    </div>
-                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                      <div className="h-full bg-purple-500 w-[35%] transition-all duration-500"></div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Mobile Layout */}
-        <div className="flex-1 flex flex-col lg:hidden">
-          {/* Participants Bar - Mobile */}
-          <div className="p-3 bg-gray-800/30 border-b border-gray-700">
-            <div className="flex space-x-3 overflow-x-auto pb-2">
-              {aiParticipants.slice(0, debateConfig.debaters).map((participant) => (
-                <div key={participant.name} className="flex-shrink-0">
-                  <AIAvatar
-                    name={participant.name}
-                    avatar={participant.avatar}
-                    color={participant.color}
-                    isActive={currentSpeaker === participant.name}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Chat Area - Mobile */}
-          <div className="flex-1 flex flex-col p-4">
-            <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-              {messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
-              ))}
-            </div>
-            
-            <div className="flex space-x-2">
-              <Input
-                value={currentInput}
-                onChange={(e) => setCurrentInput(e.target.value)}
-                placeholder="Enter your argument..."
-                className="bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 flex-1"
-                onKeyPress={handleKeyPress}
-                disabled={!isConnected}
+      {/* Participants Row */}
+      <div className="flex justify-center items-center space-x-8 mb-8 px-4">
+        {selectedParticipants.map((participant, index) => (
+          <div key={participant.name} className="flex flex-col items-center">
+            <div className={`w-24 h-24 rounded-full border-4 ${
+              participant.color === 'blue' ? 'border-blue-500' : 
+              participant.color === 'purple' ? 'border-purple-500' : 
+              'border-gray-500'
+            } flex items-center justify-center mb-2`}>
+              <AIAvatar
+                name={participant.name}
+                avatar={participant.avatar}
+                color={participant.color}
+                isActive={currentSpeaker === participant.name}
               />
-              <Button 
-                onClick={handleSendMessage}
-                className="bg-blue-600 hover:bg-blue-700"
-                disabled={!currentInput.trim() || !isConnected}
-              >
-                <Send className="w-4 h-4" />
-              </Button>
             </div>
+            <span className="text-white text-lg font-medium">{participant.name}</span>
           </div>
+        ))}
+        <div className="text-gray-500 text-2xl">...</div>
+        <div className="flex flex-col items-center">
+          <div className="w-24 h-24 rounded-full bg-gray-600 flex items-center justify-center mb-2">
+            <span className="text-white font-semibold">alex_j</span>
+          </div>
+          <span className="text-white text-lg font-medium">alex_j</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <div className="w-24 h-24 rounded-full bg-gray-600 flex items-center justify-center mb-2">
+            <span className="text-white font-semibold">alex_j</span>
+          </div>
+          <span className="text-white text-lg font-medium">alex_j</span>
         </div>
       </div>
+
+      {/* Main Content Area */}
+      <div className="flex flex-1 px-8 gap-8">
+        {/* Left - Chat Messages */}
+        <div className="flex-1">
+          <div className="space-y-6 mb-8">
+            {messages.map((message) => (
+              <div key={message.id} className="flex flex-col">
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`font-medium text-lg ${
+                    message.sender === 'GPT-3' ? 'text-white' :
+                    message.sender === 'AI-2' ? 'text-purple-400' :
+                    'text-blue-400'
+                  }`}>
+                    {message.sender}
+                  </span>
+                  <span className="text-gray-400">{message.timestamp}</span>
+                </div>
+                {message.content && (
+                  <p className="text-gray-300 text-lg leading-relaxed">
+                    {message.content}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right - Timer and Stats */}
+        <div className="w-64 space-y-6">
+          {/* Timer */}
+          <Card className="bg-gray-900 border-gray-700">
+            <CardContent className="p-6 text-center">
+              <div className="flex items-center justify-center mb-2">
+                <Timer className="w-5 h-5 mr-2 text-gray-400" />
+                <span className="text-gray-400">Timer</span>
+              </div>
+              <div className="text-6xl font-bold text-white mb-4">
+                {formatTime(timeLeft)}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Current Turn */}
+          <Card className="bg-gray-900 border-gray-700">
+            <CardContent className="p-6 text-center">
+              <div className="text-gray-400 mb-2">Turns</div>
+              <div className="text-2xl font-bold text-white">{currentSpeaker}</div>
+            </CardContent>
+          </Card>
+
+          {/* Poll */}
+          <Card className="bg-gray-900 border-gray-700">
+            <CardContent className="p-6 text-center">
+              <div className="text-gray-400 mb-4">Poll</div>
+              <div className="flex justify-center">
+                <div className="flex space-x-2">
+                  <div className="w-4 h-12 bg-gray-600 rounded"></div>
+                  <div className="w-4 h-16 bg-gray-500 rounded"></div>
+                  <div className="w-4 h-20 bg-gray-400 rounded"></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Bottom Progress Bar */}
+      <div className="px-8 py-6">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-gray-400">Next argument</span>
+          <span className="text-gray-400">{formatTime(nextArgumentTime)}</span>
+        </div>
+        <div className="w-full bg-gray-800 rounded-full h-2">
+          <div className="bg-blue-500 h-2 rounded-full" style={{ width: '60%' }}></div>
+        </div>
+      </div>
+
+      {/* Back Button - Fixed Position */}
+      <Button
+        variant="ghost"
+        onClick={() => navigate("/")}
+        className="fixed top-4 left-4 text-white hover:bg-gray-700/50 p-2"
+        size="sm"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back
+      </Button>
     </div>
   );
 };
