@@ -31,6 +31,17 @@ export const AIAvatar = ({ name, avatar, color, isActive = false }: AIAvatarProp
         </div>
       );
     }
+
+    if (avatar === "ai3") {
+      return (
+        <div className="w-12 h-12 rounded-full bg-green-900 flex items-center justify-center">
+          <div className="w-6 h-6 bg-green-400 rounded-full relative">
+            <div className="absolute top-1 left-1 w-2 h-2 bg-green-600 rounded-full"></div>
+            <div className="absolute top-1 right-1 w-2 h-2 bg-green-600 rounded-full"></div>
+          </div>
+        </div>
+      );
+    }
     
     if (avatar === "human") {
       return (
@@ -39,9 +50,17 @@ export const AIAvatar = ({ name, avatar, color, isActive = false }: AIAvatarProp
         </div>
       );
     }
+
+    if (avatar === "system") {
+      return (
+        <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center">
+          <span className="text-white font-semibold text-xs">SYS</span>
+        </div>
+      );
+    }
     
     return (
-      <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center">
+      <div className="w-12 h-12 rounded-full bg-cyan-600 flex items-center justify-center">
         <span className="text-white font-semibold">U</span>
       </div>
     );
@@ -51,8 +70,9 @@ export const AIAvatar = ({ name, avatar, color, isActive = false }: AIAvatarProp
     switch (color) {
       case "blue": return "border-blue-500";
       case "purple": return "border-purple-500";
-      case "gray": return "border-gray-500";
       case "green": return "border-green-500";
+      case "gray": return "border-gray-500";
+      case "cyan": return "border-cyan-500";
       default: return "border-gray-500";
     }
   };
