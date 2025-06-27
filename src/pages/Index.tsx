@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -28,11 +27,19 @@ const Index = () => {
   ];
 
   const handlePersonaToggle = (personaId: string) => {
-    setSelectedPersonas(prev => 
-      prev.includes(personaId) 
-        ? prev.filter(id => id !== personaId)
-        : [...prev, personaId]
-    );
+    setSelectedPersonas(prev => {
+      if (prev.includes(personaId)) {
+        // If already selected, remove it
+        return prev.filter(id => id !== personaId);
+      } else {
+        // If not selected and we haven't reached the limit, add it
+        if (prev.length < 3) {
+          return [...prev, personaId];
+        }
+        // If we've reached the limit, don't add more
+        return prev;
+      }
+    });
   };
 
   const handleJoinDebate = async () => {
@@ -93,31 +100,43 @@ const Index = () => {
             {/* AI Personas Selection */}
             <div className="space-y-4">
               <Label className="text-white text-lg font-medium">
-                Select AI Personas ({selectedPersonas.length} selected)
+                Select AI Personas ({selectedPersonas.length}/3 selected)
               </Label>
               <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto">
-                {aiPersonas.map((persona) => (
-                  <div
-                    key={persona.id}
-                    className={`flex items-center space-x-3 p-3 rounded-lg border transition-all cursor-pointer ${
-                      selectedPersonas.includes(persona.id)
-                        ? 'bg-blue-600/20 border-blue-500'
-                        : 'bg-gray-700/30 border-gray-600 hover:bg-gray-700/50'
-                    }`}
-                    onClick={() => handlePersonaToggle(persona.id)}
-                  >
-                    <Checkbox
-                      checked={selectedPersonas.includes(persona.id)}
-                      onChange={() => handlePersonaToggle(persona.id)}
-                      className="border-gray-400"
-                    />
-                    <div className="flex-1">
-                      <div className="text-white font-medium">{persona.name}</div>
-                      <div className="text-gray-400 text-sm">{persona.description}</div>
+                {aiPersonas.map((persona) => {
+                  const isSelected = selectedPersonas.includes(persona.id);
+                  const isDisabled = !isSelected && selectedPersonas.length >= 3;
+                  
+                  return (
+                    <div
+                      key={persona.id}
+                      className={`flex items-center space-x-3 p-3 rounded-lg border transition-all ${
+                        isDisabled 
+                          ? 'bg-gray-800/30 border-gray-700 opacity-50 cursor-not-allowed' 
+                          : isSelected
+                            ? 'bg-blue-600/20 border-blue-500 cursor-pointer'
+                            : 'bg-gray-700/30 border-gray-600 hover:bg-gray-700/50 cursor-pointer'
+                      }`}
+                      onClick={() => !isDisabled && handlePersonaToggle(persona.id)}
+                    >
+                      <Checkbox
+                        checked={isSelected}
+                        disabled={isDisabled}
+                        className="border-gray-400"
+                      />
+                      <div className="flex-1">
+                        <div className="text-white font-medium">{persona.name}</div>
+                        <div className="text-gray-400 text-sm">{persona.description}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+              {selectedPersonas.length >= 3 && (
+                <p className="text-yellow-400 text-sm">
+                  Maximum 3 AI personas can be selected. Deselect one to choose another.
+                </p>
+              )}
             </div>
 
             {/* Settings Section */}
