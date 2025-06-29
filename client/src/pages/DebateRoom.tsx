@@ -7,6 +7,8 @@ import { ArrowLeft, Send, Users, Timer } from "lucide-react";
 import { AIAvatar } from "@/components/AIAvatar";
 import { MessageBubble } from "@/components/MessageBubble";
 import { useToast } from "@/hooks/use-toast";
+import { connectToLiveKitRoom, publishMicrophoneAudio } from "@/lib/livekit";
+import { Room } from "livekit-client";
 
 interface Message {
   id: string;
@@ -30,6 +32,9 @@ const DebateRoom = () => {
   const [currentTurn, setCurrentTurn] = useState(1);
   const [isConnected, setIsConnected] = useState(false);
   const [nextArgumentTime, setNextArgumentTime] = useState(44); // 0:44 as shown
+  const [room, setRoom] = useState<Room | null>(null);
+  const [activeSpeakerIds, setActiveSpeakerIds] = useState<string[]>([]);
+  const [isLiveKitConnected, setIsLiveKitConnected] = useState(false);
 
   // AI participants from the config
   const selectedParticipants = debateConfig?.selectedPersonas || [
@@ -42,8 +47,25 @@ const DebateRoom = () => {
       navigate("/");
       return;
     }
-
-    initializeDebateSession();
+    // Connect to LiveKit and publish audio on mount
+    const connectLiveKit = async () => {
+      try {
+        if (debateConfig.livekit) {
+          const livekitRoom = await connectToLiveKitRoom(debateConfig.livekit);
+          setRoom(livekitRoom);
+          await publishMicrophoneAudio(livekitRoom);
+          setIsLiveKitConnected(true);
+        }
+      } catch (error) {
+        console.error('Failed to connect to LiveKit:', error);
+        toast({
+          title: "Connection Failed",
+          description: "Could not connect to the debate room.",
+          variant: "destructive"
+        });
+      }
+    };
+    connectLiveKit();
     
     // Sample messages to match the image
     const sampleMessages: Message[] = [
@@ -82,30 +104,18 @@ const DebateRoom = () => {
     setMessages(sampleMessages);
   }, [debateConfig, navigate]);
 
-  const initializeDebateSession = async () => {
-    try {
-      // TODO: Replace with actual API call to initialize debate session
-      console.log('Initializing debate session with:', debateConfig);
-      
-      // TODO: Establish WebSocket connection
-      // const ws = new WebSocket('ws://your-backend-url/debate');
-      // ws.onmessage = handleIncomingMessage;
-      // ws.onopen = () => setIsConnected(true);
-      
-      setIsConnected(true);
-      toast({
-        title: "Connected to Debate",
-        description: "You are now connected to the debate room."
-      });
-    } catch (error) {
-      console.error('Failed to initialize debate session:', error);
-      toast({
-        title: "Connection Failed",
-        description: "Could not connect to the debate room.",
-        variant: "destructive"
-      });
-    }
-  };
+  // Listen for active speakers
+  useEffect(() => {
+    if (!room) return;
+    const handleActiveSpeakersChanged = () => {
+      setActiveSpeakerIds(room.activeSpeakers.map(p => p.identity));
+    };
+    room.on('activeSpeakersChanged', handleActiveSpeakersChanged);
+    setActiveSpeakerIds(room.activeSpeakers.map(p => p.identity));
+    return () => {
+      room.off('activeSpeakersChanged', handleActiveSpeakersChanged);
+    };
+  }, [room]);
 
   const handleSendMessage = async () => {
     if (!currentInput.trim()) return;
@@ -143,8 +153,12 @@ const DebateRoom = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (!debateConfig) {
-    return null;
+  if (!debateConfig || !isLiveKitConnected) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+        <div className="text-2xl">Connecting to debate room...</div>
+      </div>
+    );
   }
 
   return (
@@ -169,7 +183,7 @@ const DebateRoom = () => {
                 name={participant.name}
                 avatar={participant.avatar}
                 color={participant.color}
-                isActive={currentSpeaker === participant.name}
+                isActive={room && activeSpeakerIds.includes(participant.name)}
               />
             </div>
             <span className="text-white text-lg font-medium">{participant.name}</span>

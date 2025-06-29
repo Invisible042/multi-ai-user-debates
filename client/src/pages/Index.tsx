@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
+import { fetchLiveKitCredentials } from "@/lib/api";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -44,27 +45,33 @@ const Index = () => {
 
   const handleJoinDebate = async () => {
     if (topic.trim() && selectedPersonas.length > 0) {
-      // TODO: Replace with actual API call to create debate session
       const selectedPersonaData = selectedPersonas.map(id => 
         aiPersonas.find(persona => persona.id === id)
       ).filter(Boolean);
 
-      console.log('Creating debate with settings:', {
-        topic,
-        turnDuration: turnDuration[0],
-        numberOfTurns: numberOfTurns[0],
-        selectedPersonas: selectedPersonaData
-      });
-      
-      // For now, just navigate to debate room with state
-      navigate("/debate", {
-        state: {
-          topic,
-          turnDuration: turnDuration[0],
-          numberOfTurns: numberOfTurns[0],
-          selectedPersonas: selectedPersonaData
-        }
-      });
+      // TODO: Add loading state
+      try {
+        // Call backend to get LiveKit credentials
+        const roomName = topic.replace(/\s+/g, "-").toLowerCase().slice(0, 20) || "main";
+        const user = `human-${Math.random().toString(36).slice(2, 8)}`;
+        const livekit = await fetchLiveKitCredentials(roomName, user, topic, selectedPersonas);
+
+        // Navigate to debate room, pass debate config and credentials
+        navigate("/debate", {
+          state: {
+            topic,
+            turnDuration: turnDuration[0],
+            numberOfTurns: numberOfTurns[0],
+            selectedPersonas: selectedPersonaData,
+            livekit,
+            user,
+            room: roomName
+          }
+        });
+      } catch (err) {
+        // TODO: Show error to user
+        console.error("Failed to start debate:", err);
+      }
     }
   };
 
@@ -190,7 +197,7 @@ const Index = () => {
               disabled={!topic.trim() || selectedPersonas.length === 0}
               className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              Join Debate
+              Start Debate
               {selectedPersonas.length > 0 && (
                 <span className="ml-2 text-sm">
                   with {selectedPersonas.length} AI{selectedPersonas.length > 1 ? 's' : ''}
