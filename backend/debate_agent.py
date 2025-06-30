@@ -109,7 +109,7 @@ async def entrypoint(ctx: agents.JobContext):
             llm=llm_plugin,
             tts=cartesia.TTS(model=TTS_MODEL, voice=VOICES.get(name)),
             vad=silero.VAD.load(),
-            turn_detection=MultilingualModel(),
+            #turn_detection=MultilingualModel(),
         )
         
         agent = PersonaAgent(name=name, prompt=prompt)

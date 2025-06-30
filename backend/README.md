@@ -23,11 +23,11 @@ A FastAPI backend for the Multi-AI Debate system that integrates with the existi
 
 Create a `.env` file in the backend directory:
 
-```env
+     ```env
 # LiveKit Configuration
-LIVEKIT_URL=wss://your-livekit-host:443
-LIVEKIT_API_KEY=your_api_key
-LIVEKIT_API_SECRET=your_api_secret
+     LIVEKIT_URL=wss://your-livekit-host:443
+     LIVEKIT_API_KEY=your_api_key
+     LIVEKIT_API_SECRET=your_api_secret
 
 # AI Models
 STT_MODEL=nova-3                    # Deepgram model
@@ -64,7 +64,7 @@ npm run dev:backend
 ```
 
 #### Manual startup
-```bash
+   ```bash
 cd backend
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
