@@ -8,7 +8,8 @@ load_dotenv()
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from livekit_token import AccessToken, VideoGrant
+import jwt
+import time
 
 # ----------------------------------------------------------------------------
 # ENV ‑ set these in Replit "Secrets" or a local .env file
@@ -34,11 +35,23 @@ app.add_middleware(
 
 
 def dev_token(room: str, identity: str) -> str:
-    grant = VideoGrant(room=room)
-    atk   = AccessToken(API_KEY, API_SECRET, identity=identity)
-    atk.add_grant(grant)
-    atk.ttl = int(timedelta(hours=2).total_seconds())
-    return atk.to_jwt()
+    api_key = API_KEY
+    api_secret = API_SECRET
+    now = int(time.time())
+    ttl = int(timedelta(hours=2).total_seconds())
+    payload = {
+        "iss": api_key,
+        "sub": identity,
+        "nbf": now,
+        "exp": now + ttl,
+        "video": {
+            "room": room,
+            "can_publish": True,
+            "can_subscribe": True,
+        }
+    }
+    token = jwt.encode(payload, api_secret, algorithm="HS256")
+    return token
 
 
 async def start_debate_agent_async(room: str, topic: str, personas: list[str], turn_duration: int, total_rounds: int):
