@@ -8,7 +8,7 @@ load_dotenv()
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from livekit import AccessToken, VideoGrant
+from livekit.jwt import AccessToken, VideoGrant
 
 # ----------------------------------------------------------------------------
 # ENV ‑ set these in Replit "Secrets" or a local .env file
