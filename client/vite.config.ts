@@ -1,11 +1,3 @@
-
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
-import { componentTagger } from "lovable-tagger";
-import type { PluginOption } from "vite";
-
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const plugins: PluginOption[] = [react()];
   
@@ -15,7 +7,7 @@ export default defineConfig(({ mode }) => {
   
   return {
     server: {
-      host: "::",
+      host: "0.0.0.0", // ✅ instead of "::"
       port: 8080,
       watch: {
         usePolling: false,
