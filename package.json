@@ -11,7 +11,7 @@
     "install:all": "npm install && npm run install:client && npm run install:backend",
     "install:client": "cd client && npm install",
     "create:venv": "cd backend && python -m venv venv",
-    "install:backend": "cd backend && . venv/bin/activate && pip install -r requirements.txt",
+    "install:backend": "cd backend && venv/bin/pip install -r requirements.txt",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:client\"",
     "dev:client": "cd client && npm run dev",
     "dev:backend": "cd backend && python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000",
